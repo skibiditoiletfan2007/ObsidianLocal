@@ -339,7 +339,7 @@ local Templates = {
         Text = "KeyPicker",
         Default = "None",
         Mode = "Toggle",
-        Modes = { "Always", "Toggle", "Hold" },
+        Modes = { "Always", "Toggle", "Hold", "Once" },
         SyncToggleState = false,
 
         Callback = function() end,
@@ -940,9 +940,10 @@ end
 
 local FetchIcons, Icons = pcall(function()
     return loadstring(
-        game:HttpGet("https://raw.githubusercontent.com/deividcomsono/lucide-roblox-direct/refs/heads/main/source.lua")
+       game:HttpGet("https://raw.githubusercontent.com/deividcomsono/lucide-roblox-direct/refs/heads/main/source.lua")
     )()
 end)
+
 function Library:GetIcon(IconName: string)
     if not FetchIcons then
         return
@@ -2082,6 +2083,7 @@ do
 
             Library:SafeCallback(KeyPicker.Callback, KeyPicker.Toggled)
             Library:SafeCallback(KeyPicker.Changed, KeyPicker.Toggled)
+            Library:SafeCallback(KeyPicker.Clicked, KeyPicker.Toggled)
         end
 
         function KeyPicker:SetValue(Data)
@@ -2098,6 +2100,32 @@ do
         function KeyPicker:SetText(Text)
             KeybindsToggle:SetText(Text)
             KeyPicker:Update()
+        end
+
+        function KeyPicker:Remove()
+            if Picker then Picker:Destroy() end
+            if MenuTable and MenuTable.Menu then MenuTable.Menu:Destroy() end
+
+            if self.InputBegan then
+                self.InputBegan:Disconnect()
+                local i = table.find(Library.Signals, self.InputBegan)
+                if i then table.remove(Library.Signals, i) end
+            end
+            if self.InputEnded then
+                self.InputEnded:Disconnect()
+                local i = table.find(Library.Signals, self.InputEnded)
+                if i then table.remove(Library.Signals, i) end
+            end
+            if KeybindsToggle then
+                KeybindsToggle.Holder:Destroy()
+                local i = table.find(Library.KeybindToggles, KeybindsToggle)
+                if i then table.remove(Library.KeybindToggles, i) end
+            end
+
+            Options[Idx] = nil
+
+            local i = table.find(ParentObj.Addons, self)
+            if i then table.remove(ParentObj.Addons, i) end
         end
 
         local Picking = false
@@ -2138,7 +2166,7 @@ do
         end)
         Picker.MouseButton2Click:Connect(MenuTable.Toggle)
 
-        Library:GiveSignal(UserInputService.InputBegan:Connect(function(Input: InputObject)
+        KeyPicker.InputBegan = Library:GiveSignal(UserInputService.InputBegan:Connect(function(Input: InputObject)
             if
                 KeyPicker.Mode == "Always"
                 or KeyPicker.Value == "Unknown"
@@ -2162,12 +2190,21 @@ do
                         KeyPicker:DoClick()
                     end
                 end
+            elseif KeyPicker.Mode == "Once" then
+                local Key = KeyPicker.Value
+
+                if SpecialKeysInput[Input.UserInputType] == Key then
+                    KeyPicker:DoClick()
+                    
+                elseif Input.UserInputType == Enum.UserInputType.Keyboard and Input.KeyCode.Name == Key then
+                    KeyPicker:DoClick()
+                end
             end
 
             KeyPicker:Update()
         end))
 
-        Library:GiveSignal(UserInputService.InputEnded:Connect(function()
+        KeyPicker.InputEnded = Library:GiveSignal(UserInputService.InputEnded:Connect(function()
             if
                 KeyPicker.Value == "Unknown"
                 or KeyPicker.Value == "None"
