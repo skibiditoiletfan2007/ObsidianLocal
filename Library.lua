@@ -20,7 +20,7 @@ local gethui = gethui or function()
 end
 
 local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
-local Mouse = LocalPlayer:GetMouse()
+local Mouse = cloneref(LocalPlayer:GetMouse())
 
 local Labels = {}
 local Buttons = {}
@@ -145,7 +145,7 @@ do
             return AssetData.Id
         end
 
-        local AssetID = `rbxassetid://{AssetData.RobloxId}`
+        local AssetID = string.format("rbxassetid://%s", AssetData.RobloxId)
 
         if getcustomasset then
             local Success, NewID = pcall(getcustomasset, AssetData.Path)
@@ -171,7 +171,7 @@ do
         end
 
         local URLPath = AssetPath:gsub("Obsidian/", "")
-        writefile(AssetPath, game:HttpGet(`{BaseURL}{URLPath}`))
+        writefile(AssetPath, game:HttpGet(BaseURL .. URLPath))
     end
 
     for _, Data in ObsidianImageManager.Assets do
@@ -412,7 +412,7 @@ end
 
 local function IsMouseInput(Input: InputObject, IncludeM2: boolean?)
     return Input.UserInputType == Enum.UserInputType.MouseButton1
-        or IncludeM2 and Input.UserInputType == Enum.UserInputType.MouseButton2
+        or (IncludeM2 == true and Input.UserInputType == Enum.UserInputType.MouseButton2)
         or Input.UserInputType == Enum.UserInputType.Touch
 end
 local function IsClickInput(Input: InputObject, IncludeM2: boolean?)
@@ -423,6 +423,11 @@ end
 local function IsHoverInput(Input: InputObject)
     return (Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch)
         and Input.UserInputState == Enum.UserInputState.Change
+end
+local function IsDragInput(Input: InputObject, IncludeM2: boolean?)
+    return IsMouseInput(Input, IncludeM2)
+        and (Input.UserInputState == Enum.UserInputState.Begin or Input.UserInputState == Enum.UserInputState.Change)
+        and Library.IsRobloxFocused
 end
 
 local function GetTableSize(Table: { [any]: any })
@@ -938,6 +943,10 @@ function Library:GiveSignal(Connection: RBXScriptConnection)
     return Connection
 end
 
+function IsValidCustomIcon(Icon: string)
+    return typeof(Icon) == "string" and (Icon:match("rbxasset") or Icon:match("roblox%.com/asset/%?id=") or Icon:match("rbxthumb://type="))
+end
+
 local FetchIcons, Icons = pcall(function()
     return loadstring(
         readfile("Icons.lua")
@@ -952,6 +961,19 @@ function Library:GetIcon(IconName: string)
         return
     end
     return Icon
+end
+
+function Library:GetCustomIcon(IconName: string)
+    if not IsValidCustomIcon(IconName) then
+        return Library:GetIcon(IconName)
+    else
+        return {
+            Url = IconName,
+            ImageRectOffset = Vector2.zero,
+            ImageRectSize = Vector2.zero,
+            Custom = true
+        }
+    end
 end
 
 function Library:Validate(Table: { [string]: any }, Template: { [string]: any }): { [string]: any }
@@ -2522,7 +2544,7 @@ do
         Holder.MouseButton2Click:Connect(ContextMenu.Toggle)
 
         SatVipMap.InputBegan:Connect(function(Input: InputObject)
-            while IsClickInput(Input) do
+            while IsDragInput(Input) do
                 local MinX = SatVipMap.AbsolutePosition.X
                 local MaxX = MinX + SatVipMap.AbsoluteSize.X
                 local LocationX = math.clamp(Mouse.X, MinX, MaxX)
@@ -2544,7 +2566,7 @@ do
             end
         end)
         HueSelector.InputBegan:Connect(function(Input: InputObject)
-            while IsClickInput(Input) do
+            while IsDragInput(Input) do
                 local Min = HueSelector.AbsolutePosition.Y
                 local Max = Min + HueSelector.AbsoluteSize.Y
                 local Location = math.clamp(Mouse.Y, Min, Max)
@@ -2561,7 +2583,7 @@ do
         end)
         if TransparencySelector then
             TransparencySelector.InputBegan:Connect(function(Input: InputObject)
-                while IsClickInput(Input) do
+                while IsDragInput(Input) do
                     local Min = TransparencySelector.AbsolutePosition.Y
                     local Max = TransparencySelector.AbsolutePosition.Y + TransparencySelector.AbsoluteSize.Y
                     local Location = math.clamp(Mouse.Y, Min, Max)
@@ -3852,7 +3874,7 @@ do
                 Side.ScrollingEnabled = false
             end
 
-            while IsClickInput(Input) do
+            while IsDragInput(Input) do
                 local Location = Mouse.X
                 local Scale = math.clamp((Location - Bar.AbsolutePosition.X) / Bar.AbsoluteSize.X, 0, 1)
 
@@ -4345,8 +4367,19 @@ do
         local Dragging, Pinching = false, false
         local LastMousePos, LastPinchDist = nil, 0
 
+        local ViewportObject = Info.Object
+        if Info.Clone and typeof(Info.Object) == "Instance" then
+            if Info.Object.Archivable then
+                ViewportObject = ViewportObject:Clone()
+            else
+                Info.Object.Archivable = true
+                ViewportObject = ViewportObject:Clone()
+                Info.Object.Archivable = false
+            end
+        end
+
         local Viewport = {
-            Object = if Info.Clone then Info.Object:Clone() else Info.Object,
+            Object = ViewportObject,
             Camera = if not Info.Camera then Instance.new("Camera") else Info.Camera,
             Interactive = Info.Interactive,
             AutoFocus = Info.AutoFocus,
@@ -4643,20 +4676,12 @@ do
             Parent = Box,
         }
 
-        if
-            not (
-                ImageProperties.Image:match("rbxasset")
-                or ImageProperties.Image:match("roblox%.com/asset/%?id=")
-                or ImageProperties.Image:match("rbxthumb://type=AvatarHeadShot")
-            )
-        then
-            local Icon = Library:GetIcon(ImageProperties.Image)
-            assert(Icon, "Image must be a valid Roblox asset or a valid URL or a valid lucide icon.")
+        local Icon = Library:GetCustomIcon(ImageProperties.Image)
+        assert(Icon, "Image must be a valid Roblox asset or a valid URL or a valid lucide icon.")
 
-            ImageProperties.Image = Icon.Url
-            ImageProperties.ImageRectOffset = Icon.ImageRectOffset
-            ImageProperties.ImageRectSize = Icon.ImageRectSize
-        end
+        ImageProperties.Image = Icon.Url
+        ImageProperties.ImageRectOffset = Icon.ImageRectOffset
+        ImageProperties.ImageRectSize = Icon.ImageRectSize
 
         local ImageLabel = New("ImageLabel", ImageProperties)
 
@@ -4671,20 +4696,12 @@ do
         function Image:SetImage(NewImage: string)
             assert(typeof(NewImage) == "string", "Image must be a string.")
 
-            if
-                not (
-                    NewImage:match("rbxasset")
-                    or NewImage:match("roblox%.com/asset/%?id=")
-                    or NewImage:match("rbxthumb://type=AvatarHeadShot")
-                )
-            then
-                local Icon = Library:GetIcon(NewImage)
-                assert(Icon, "Image must be a valid Roblox asset or a valid URL or a valid lucide icon.")
+            local Icon = Library:GetCustomIcon(NewImage)
+            assert(Icon, "Image must be a valid Roblox asset or a valid URL or a valid lucide icon.")
 
-                NewImage = Icon.Url
-                Image.RectOffset = Icon.ImageRectOffset
-                Image.RectSize = Icon.ImageRectSize
-            end
+            NewImage = Icon.Url
+            Image.RectOffset = Icon.ImageRectOffset
+            Image.RectSize = Icon.ImageRectSize
 
             ImageLabel.Image = NewImage
             Image.Image = NewImage
@@ -5184,7 +5201,7 @@ function Library:Notify(...)
     if Data.SoundId then
         local SoundId = Data.SoundId
         if typeof(SoundId) == "number" then
-            SoundId = `rbxassetid://{SoundId}`
+            SoundId = string.format("rbxassetid://%d", SoundId)
         end
 
         New("Sound", {
@@ -5354,7 +5371,7 @@ function Library:CreateWindow(WindowInfo)
 
         if WindowInfo.Icon then
             New("ImageLabel", {
-                Image = if tonumber(WindowInfo.Icon) then `rbxassetid://{WindowInfo.Icon}` else WindowInfo.Icon,
+                Image = if tonumber(WindowInfo.Icon) then string.format("rbxassetid://%d", WindowInfo.Icon) else WindowInfo.Icon,
                 Size = WindowInfo.IconSize,
                 Parent = TitleHolder,
             })
@@ -5620,7 +5637,7 @@ function Library:CreateWindow(WindowInfo)
         local WarningText
         local WarningStroke
 
-        Icon = Library:GetIcon(Icon)
+        Icon = Library:GetCustomIcon(Icon)
         do
             TabButton = New("TextButton", {
                 BackgroundColor3 = "MainColor",
@@ -5652,7 +5669,7 @@ function Library:CreateWindow(WindowInfo)
             if Icon then
                 TabIcon = New("ImageLabel", {
                     Image = Icon.Url,
-                    ImageColor3 = "AccentColor",
+                    ImageColor3 = Icon.Custom and "White" or "AccentColor",
                     ImageRectOffset = Icon.ImageRectOffset,
                     ImageRectSize = Icon.ImageRectSize,
                     ImageTransparency = 0.5,
@@ -5930,11 +5947,11 @@ function Library:CreateWindow(WindowInfo)
                     Size = UDim2.new(1, 0, 0, 1),
                 })
 
-                local BoxIcon = Library:GetIcon(Info.IconName)
+                local BoxIcon = Library:GetCustomIcon(Info.IconName)
                 if BoxIcon then
                     New("ImageLabel", {
                         Image = BoxIcon.Url,
-                        ImageColor3 = "AccentColor",
+                        ImageColor3 = BoxIcon.Custom and "White" or "AccentColor",
                         ImageRectOffset = BoxIcon.ImageRectOffset,
                         ImageRectSize = BoxIcon.ImageRectSize,
                         Position = UDim2.fromOffset(6, 6),
