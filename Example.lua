@@ -48,15 +48,15 @@ local Tabs = {
 --[[
 Example of how to add a warning box to a tab; the title AND text support rich text formatting.
 
-local WarningTab = Tabs["UI Settings"]:AddTab("Warning Box", "user")
+local UISettingsTab = Tabs["UI Settings"]
 
-WarningTab:UpdateWarningBox({
+UISettingsTab:UpdateWarningBox({
 	Visible = true,
 	Title = "Warning",
 	Text = "This is a warning box!",
 })
 
-]]
+--]]
 
 -- Groupbox and Tabbox inherit the same functions
 -- except Tabboxes you have to call the functions on a tab (Tabbox:AddTab(Name))
@@ -657,7 +657,10 @@ Tabs.Key:AddLabel({
 	Size = 16,
 })
 
-Tabs.Key:AddKeyBox("Banana", function(Success, ReceivedKey)
+Tabs.Key:AddKeyBox(function(ReceivedKey)
+	-- KeyBox only takes the callback for the button, you need to implement your own key check inside the callback
+	local Success = ReceivedKey == "Banana"
+
 	print("Expected Key: Banana - Received Key:", ReceivedKey, "| Success:", Success)
 	Library:Notify({
 		Title = "Expected Key: Banana",
@@ -666,16 +669,9 @@ Tabs.Key:AddKeyBox("Banana", function(Success, ReceivedKey)
 	})
 end)
 
-Tabs.Key:AddLabel({
-	Text = "No Key",
-	DoesWrap = true,
-	Size = 16,
-})
+-- DraggableLabel
 
-Tabs.Key:AddKeyBox(function(Success, ReceivedKey)
-	print("Expected Key: None | Success:", Success) -- true
-	Library:Notify("Success: " .. tostring(Success), 4)
-end)
+Library:AddDraggableLabel("This is a Draggable Label")
 
 -- UI Settings
 local MenuGroup = Tabs["UI Settings"]:AddLeftGroupbox("Menu", "wrench")

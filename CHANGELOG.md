@@ -1,3 +1,67 @@
+## 16.01.2026
+
+```diff
+[features]
++ Library:ResetCursorIcon()
++ Library:ChangeCursorIcon(ImageId: string)
++ Library:ChangeCursorIconSize(Size: UDim2)
+```
+
+## 30.12.2025
+
+```diff
+[breaking changes]
+! Library.Scheme:
+  .Red -> .RedColor
+  .Dark -> .DarkColor
+  .White -> .WhiteColor
+! WindowInfo.Compact -> WindowInfo.SidebarCompacted
+! WindowInfo.SidebarMinWidth -> WindowInfo.MinSidebarWidth
+! WindowInfo.MinContentWidth -> WindowInfo.MinContainerWidth
+- WindowInfo.SidebarCollapseThreshold
+- WindowInfo.SidebarHighlightCallback function
+- WindowInfo.InitialSidebarWidth
+- WindowInfo.InitialSidebarScale
+
+[fixes]
++ Fixed DPI Scaling
+
+[features]
++ WindowInfo.DisableCompactingSnap
+  -> WindowInfo.CompactWidthActivation
+
+[changes]
++ WindowInfo.SidebarCompactWidth default value (54) to new value (48)
++ Library:SetWatermark is deprecated due to Library:AddDraggableLabel having the same functionality
+```
+
+## 18.12.2025
+
+```diff
++ Patched static key bypass inside Key Box
+    * The AddKeyBox function now only takes the callback function
+    * The callback function only returns the provided key, you need to implement your own handler inside the callback
+```
+
+## 09.11.2025
+
+```diff
++ Added Library.ImageManager (https://docs.mspaint.cc/obsidian/core/library#custom-asset-icons)
+```
+
+## 02.11.2025
+
+```diff
++ Warning Box now follows the UI style of Obsidian (rounded corners with outlines)
++ Watermark now correctly resizes itself with new line characters
+```
+
+## 01.11.2025
+
+```diff
++ The ignored indexes (SaveManager.SetIgnoreIndexes) are no longer applied when you load a configuration that contains them
+```
+
 ## 5.10.2025
 
 ```diff

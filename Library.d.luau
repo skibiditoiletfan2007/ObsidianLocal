@@ -9,9 +9,9 @@ export type Scheme = {
     OutlineColor: Color3,
     FontColor: Color3,
     Font: Font,
-    Red: Color3,
-    Dark: Color3,
-    White: Color3,
+    RedColor: Color3,
+    DarkColor: Color3,
+    WhiteColor: Color3,
 }
 
 export type Icon = {
@@ -51,8 +51,8 @@ export type Notification = {
     Destroyed: boolean,
 
     Resize: (self: Notification) -> (),
-    ChangeTitle: (self: Notification, NewText: string) -> (),
-    ChangeDescription: (self: Notification, NewText: string) -> (),
+    ChangeTitle: (self: Notification, Text: string) -> (),
+    ChangeDescription: (self: Notification, Text: string) -> (),
     ChangeStep: (self: Notification, NewStep: number) -> (),
     Destroy: (self: Notification) -> (),
 }
@@ -70,9 +70,15 @@ export type KeybindToggle = {
     SetNormal: (self: KeybindToggle, Normal: boolean) -> (),
 }
 
+export type DraggableLabel = {
+    Label: TextLabel,
+    SetText: (self: DraggableLabel, Text: string) -> (),
+    SetVisible: (self: DraggableLabel, Visible: boolean) -> (),
+}
+
 export type DraggableButton = {
     Button: TextButton,
-    SetText: (self: DraggableButton, NewText: string) -> (),
+    SetText: (self: DraggableButton, Text: string) -> (),
 }
 
 --// Element Creation Info Types
@@ -669,18 +675,21 @@ export type KeyTab = BaseGroupbox & {
 }
 
 export type Window = {
-    GetSidebarWidth: (self: Window) -> number,
     IsSidebarCompacted: (self: Window) -> boolean,
+    GetSidebarWidth: (self: Window) -> number,
     SetSidebarWidth: (self: Window, Width: number) -> (),
-    SetCompact: (self: Window, State: boolean) -> (),
-    ApplyLayout: (self: Window) -> (),
     AddTab: (
         self: Window,
         Info: { Name: string, Icon: string?, Description: string? } | string,
         Icon: string?,
         Description: string?
     ) -> Tab,
-    AddKeyTab: (self: Window, Name: string) -> KeyTab,
+    AddKeyTab: (
+        self: Window,
+        Info: { Name: string, Icon: string?, Description: string? } | string,
+        Icon: string?,
+        Description: string?
+    ) -> KeyTab,
 }
 
 --// Main Library Type
@@ -693,6 +702,7 @@ export type Library = {
     ScreenGui: ScreenGui?,
     SearchText: string,
     Searching: boolean,
+    GlobalSearch: boolean,
     LastSearchTab: Tab?,
     ActiveTab: Tab?,
     Tabs: { [string]: Tab | KeyTab },
@@ -726,6 +736,11 @@ export type Library = {
     Registry: { [GuiObject]: { [string]: string | () -> Color3 } },
     DPIRegistry: { [GuiObject]: { [string]: any } },
     CopiedColor: { Color3 | number }?,
+    ImageManager: {
+        AddAsset: (AssetName: string, RobloxAssetId: number, URL: string, ForceRedownload: boolean?) -> nil,
+        GetAsset: (AssetName: string) -> string?,
+        DownloadAsset: (AssetName: string, ForceRedownload: boolean?) -> nil,
+    },
 
     -- Methods
     UpdateKeybindFrame: (self: Library) -> (),
@@ -801,6 +816,7 @@ export type Library = {
             Resizable: boolean?,
             DisableSearch: boolean?,
             SearchbarSize: UDim2?,
+            GlobalSearch: boolean?,
             CornerRadius: number?,
             NotifySide: "Left" | "Right"?,
             ShowCustomCursor: boolean?,
@@ -808,15 +824,14 @@ export type Library = {
             ToggleKeybind: Enum.KeyCode?,
             MobileButtonsSide: "Left" | "Right"?,
             UnlockMouseWhileOpen: boolean?,
-            Compact: boolean?,
             EnableSidebarResize: boolean?,
-            SidebarMinWidth: number?,
+            EnableCompacting: boolean?,
+            DisableCompactingSnap: boolean?,
+            SidebarCompacted: boolean?,
+            MinContainerWidth: number?,
+            MinSidebarWidth: number?,
             SidebarCompactWidth: number?,
-            SidebarCollapseThreshold: number?,
-            SidebarHighlightCallback: ((Frame, boolean) -> ())?,
-            InitialSidebarWidth: number?,
-            InitialSidebarScale: number?,
-            MinContentWidth: number?,
+            CompactWidthActivation: number?,
         }
     ) -> Window,
     Toggle: (self: Library, Value: boolean?) -> (),
