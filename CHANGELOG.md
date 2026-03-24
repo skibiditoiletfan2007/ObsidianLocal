@@ -1,3 +1,17 @@
+## 24.03.2026
+
+```diff
+[features]
++ Input.VerifyValue(NewValue: string): boolean
++ Input.ClearTextOnBlur
++ KeyPicker.Blacklisted, KeyPicker.BlacklistedModifiers
++ KeyPicker.Whitelisted, KeyPicker.WhitelistedModifiers
+
+[changes]
++ CornerRadius now applies to more elements
++ Height of the slider increased by 1px
+```
+
 ## 17.03.2026
 
 ```diff
