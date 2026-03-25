@@ -347,7 +347,7 @@ local Templates = {
 
         Callback = function() end,
         Changed = function() end,
-        VerifyValue = function() return true end,
+        VerifyValue = nil,
 
         Disabled = false,
         Visible = true,
@@ -4232,7 +4232,7 @@ do
                 end
             end
 
-            if Text ~= Input.EmptyReset and Info.VerifyValue(Text) ~= true then
+            if typeof(Info.VerifyValue) == "function" and (Text ~= Input.EmptyReset and Info.VerifyValue(Text) ~= true) then
                 Text = Input.EmptyReset
             end
 
@@ -4300,11 +4300,11 @@ do
         table.insert(Groupbox.Elements, Input)
 
         Input.Default = Input.Value
-        Input:SetValue(Input.Default)
-        if Input.Value == Input.EmptyReset and Input.Value ~= Input.Default then
+        if typeof(Info.VerifyValue) == "function" and (Input.Default ~= Input.EmptyReset and Info.VerifyValue(Input.Default) ~= true) then
+            Input:SetValue(Input.EmptyReset)
             Input.Default = Input.EmptyReset
         end
-
+        
         Options[Idx] = Input
 
         return Input
