@@ -4809,13 +4809,13 @@ do
 
             local Count = 0
             for _, Value in Values do
-                if SearchBox and not tostring(Value):lower():match(SearchBox.Text:lower()) then
+                local FormattedValue = tostring(Info.FormatListValue and Info.FormatListValue(Value) or Value)
+                if SearchBox and not FormattedValue:lower():match(SearchBox.Text:lower()) then
                     continue
                 end
 
                 Count += 1
 
-                local FormattedValue = Info.FormatListValue and Info.FormatListValue(tostring(Value)) or tostring(Value)
                 local IsDisabled = table.find(DisabledValues, Value)
                 local Table = {}
 

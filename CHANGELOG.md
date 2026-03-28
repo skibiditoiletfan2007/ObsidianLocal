@@ -2,7 +2,8 @@
 
 ```diff
 [features]
-+ Dropdown.FormatListValue(Value: string): string
++ Dropdown.FormatListValue(Value)
+  - Randomized formatting will not be preserved as the function is called every time the context menu is rebuilt
 ```
 
 ## 24.03.2026
