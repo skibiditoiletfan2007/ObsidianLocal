@@ -1,3 +1,10 @@
+## 28.03.2026
+
+```diff
+[features]
++ Dropdown.FormatListValue(Value: string): string
+```
+
 ## 24.03.2026
 
 ```diff
