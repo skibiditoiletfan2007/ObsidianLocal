@@ -4814,6 +4814,8 @@ do
                 end
 
                 Count += 1
+
+                local FormattedValue = Info.FormatListValue and Info.FormatListValue(tostring(Value)) or tostring(Value)
                 local IsDisabled = table.find(DisabledValues, Value)
                 local Table = {}
 
@@ -4822,7 +4824,7 @@ do
                     BackgroundTransparency = 1,
                     LayoutOrder = IsDisabled and 1 or 0,
                     Size = UDim2.new(1, 0, 0, 21),
-                    Text = tostring(Value),
+                    Text = FormattedValue,
                     TextSize = 14,
                     TextTransparency = 0.5,
                     TextXAlignment = Enum.TextXAlignment.Left,
