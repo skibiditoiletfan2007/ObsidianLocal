@@ -7588,6 +7588,14 @@ function Library:CreateWindow(WindowInfo)
             Library.ActiveTab = nil
         end
 
+        function Tab:SetVisible(Visible: boolean)
+            TabButton.Visible = Visible
+
+            if not Visible and Library.ActiveTab == Tab then
+                Tab:Hide()
+            end
+        end
+
         --// Execution \\--
         if not Library.ActiveTab then
             Tab:Show()
@@ -7842,6 +7850,14 @@ function Library:CreateWindow(WindowInfo)
             Window:HideTabInfo()
 
             Library.ActiveTab = nil
+        end
+
+        function Tab:SetVisible(Visible: boolean)
+            TabButton.Visible = Visible
+
+            if not Visible and Library.ActiveTab == Tab then
+                Tab:Hide()
+            end
         end
 
         --// Execution \\--
