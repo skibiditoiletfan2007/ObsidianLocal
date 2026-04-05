@@ -8670,6 +8670,7 @@ function Library:CreateLoading(LoadingInfo)
         end,
         Position = UDim2.fromScale(0.5, 0.5),
         Size = UDim2.fromOffset(Loading.ShowSidebar and (Loading.ContentWidth + Loading.SidebarWidth) or Loading.WindowWidth, Loading.WindowHeight),
+        ClipsDescendants = true,
         Text = "",
         AutoButtonColor = false,
         Parent = ScreenGui,
@@ -8693,7 +8694,8 @@ function Library:CreateLoading(LoadingInfo)
         Name = "SideBar",
         BackgroundTransparency = 1,
         Position = UDim2.fromOffset(Loading.ContentWidth, 0),
-        Size = UDim2.new(0, Loading.SidebarWidth, 1, 0),
+        Size = UDim2.new(0, Loading.ShowSidebar and Loading.SidebarWidth or 0, 1, 0),
+        ClipsDescendants = true,
         Visible = Loading.ShowSidebar,
         Parent = MainFrame,
     })
@@ -8999,15 +9001,27 @@ function Library:CreateLoading(LoadingInfo)
             Loading:RecalculateErrorHeight()
         end
 
-        local FinalWidth = Loading.ShowSidebar and (Loading.ContentWidth + Loading.SidebarWidth) or Loading.WindowWidth
+        local ShowSidebar = Loading.ShowSidebar
+        local FinalWidth = ShowSidebar and (Loading.ContentWidth + Loading.SidebarWidth) or Loading.WindowWidth
         local FinalHeight = Loading.IsError and Loading.WindowErrorHeight or Loading.WindowHeight
         
-        TweenService:Create(MainFrame, Library.TweenInfo, { Size = UDim2.fromOffset(FinalWidth, FinalHeight) }):Play()
-        TweenService:Create(SideBar, Library.TweenInfo, { Position = UDim2.fromOffset(Loading.ContentWidth, 0), Size = UDim2.new(0, Loading.SidebarWidth, 1, 0) }):Play()
-        TweenService:Create(Container, Library.TweenInfo, { Size = UDim2.new(0, Loading.ShowSidebar and Loading.ContentWidth or Loading.WindowWidth, 1, 0) }):Play()
+        if ShowSidebar then
+            SideBar.Visible = true
+            SidebarDivider.Visible = true
+        end
 
-        SideBar.Visible = Loading.ShowSidebar
-        SidebarDivider.Visible = Loading.ShowSidebar
+        TweenService:Create(MainFrame, Library.TweenInfo, { Size = UDim2.fromOffset(FinalWidth, FinalHeight) }):Play()
+        TweenService:Create(SideBar, Library.TweenInfo, { Position = UDim2.fromOffset(Loading.ContentWidth, 0), Size = UDim2.new(0, ShowSidebar and Loading.SidebarWidth or 0, 1, 0) }):Play()
+        TweenService:Create(Container, Library.TweenInfo, { Size = UDim2.new(0, ShowSidebar and Loading.ContentWidth or Loading.WindowWidth, 1, 0) }):Play()
+
+        if not ShowSidebar then
+            task.delay(Library.TweenInfo.Time, function()
+                if not Loading.ShowSidebar then
+                    SideBar.Visible = false
+                    SidebarDivider.Visible = false
+                end
+            end)
+        end
     end
 
     --// Content Page \\--
@@ -9118,7 +9132,7 @@ function Library:CreateLoading(LoadingInfo)
             + 15                        -- Padding between Label and Buttons
             + (HasButtons and 48 or 0)  -- Buttons Area
 
-        Loading.WindowErrorHeight = math.max(Loading.WindowHeight, RequiredHeight)
+        Loading.WindowErrorHeight = RequiredHeight -- math.max(Loading.WindowHeight, RequiredHeight)
     end
 
     function Loading:SetErrorMessage(Text)
