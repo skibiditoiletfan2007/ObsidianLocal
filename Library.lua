@@ -8627,6 +8627,7 @@ function Library:CreateLoading(LoadingInfo)
 
         ShowSidebar = LoadingInfo.ShowSidebar,
         IsError = false,
+        Destroyed = false,
 
         WindowWidth = LoadingInfo.WindowWidth,
         WindowHeight = LoadingInfo.WindowHeight,
@@ -9192,6 +9193,7 @@ function Library:CreateLoading(LoadingInfo)
         end
 
         ScreenGui:Destroy()
+        Loading.Destroyed = true
         Library.ActiveLoading = nil
 
         if Library.Toggle and Library.Toggled == false and Library.Unloaded ~= true then
