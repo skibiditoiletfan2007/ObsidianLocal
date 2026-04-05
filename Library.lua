@@ -46,6 +46,22 @@ local CustomImageManagerAssets = {
 
         Id = nil,
     },
+
+    LoadingIcon = {
+        RobloxId = 97544096941083,
+        Path = "Obsidian/assets/LoadingIcon.png",
+        URL = BaseURL .. "assets/LoadingIcon.png",
+
+        Id = nil,
+    },
+
+    CheckIcon = {
+        RobloxId = 97682394690683,
+        Path = "Obsidian/assets/CheckIcon.png",
+        URL = BaseURL .. "assets/CheckIcon.png",
+
+        Id = nil,
+    },
 }
 do
     local function RecursiveCreatePath(Path: string, IsFile: boolean?)
@@ -330,7 +346,7 @@ local Templates = {
         Icon = 95816097006870,
         IconSize = UDim2.fromOffset(30, 30),
 
-        LoadingIcon = "rbxassetid://97544096941083",
+        LoadingIcon = CustomImageManager.GetAsset("LoadingIcon"),
         LoadingIconColor = nil,
         LoadingIconTweenTime = 1,
 
