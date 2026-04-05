@@ -9040,6 +9040,8 @@ function Library:CreateLoading(LoadingInfo)
                 { Rotation = 360 }
             )
             RotationTween:Play()
+        else
+            LoadingIcon.Rotation = 0
         end
     end
 
