@@ -8631,6 +8631,7 @@ function Library:CreateLoading(LoadingInfo)
 
         WindowWidth = LoadingInfo.WindowWidth,
         WindowHeight = LoadingInfo.WindowHeight,
+        WindowErrorHeight = LoadingInfo.WindowHeight,
 
         ContentWidth = LoadingInfo.ContentWidth,
         SidebarWidth = LoadingInfo.SidebarWidth,
@@ -8979,9 +8980,14 @@ function Library:CreateLoading(LoadingInfo)
     })
 
     function Loading:UpdateLayout()
+        if Loading.IsError then
+            Loading:RecalculateErrorHeight()
+        end
+
         local FinalWidth = Loading.ShowSidebar and (Loading.ContentWidth + Loading.SidebarWidth) or Loading.WindowWidth
+        local FinalHeight = Loading.IsError and Loading.WindowErrorHeight or Loading.WindowHeight
         
-        TweenService:Create(MainFrame, Library.TweenInfo, { Size = UDim2.fromOffset(FinalWidth, Loading.WindowHeight) }):Play()
+        TweenService:Create(MainFrame, Library.TweenInfo, { Size = UDim2.fromOffset(FinalWidth, FinalHeight) }):Play()
         TweenService:Create(SideBar, Library.TweenInfo, { Position = UDim2.fromOffset(Loading.ContentWidth, 0), Size = UDim2.new(0, Loading.SidebarWidth, 1, 0) }):Play()
         TweenService:Create(Container, Library.TweenInfo, { Size = UDim2.new(0, Loading.ShowSidebar and Loading.ContentWidth or Loading.WindowWidth, 1, 0) }):Play()
 
@@ -9079,8 +9085,28 @@ function Library:CreateLoading(LoadingInfo)
         end
     end
 
+    function Loading:RecalculateErrorHeight()
+        local TargetWidth = (Loading.ShowSidebar and Loading.ContentWidth or Loading.WindowWidth) - 30
+        local _, ErrorY = Library:GetTextBounds(ErrorLabel.Text, Library.Scheme.Font, 14, TargetWidth)
+
+        ErrorLabel.Size = UDim2.new(1, -30, 0, ErrorY)
+
+        local HasButtons = ErrorButtonsHolder.Visible
+        local RequiredHeight =
+              49                        -- TopBar
+            + 15                        -- Padding Top
+            + 18                        -- Title Height
+            + 6                         -- Padding between Title and Label
+            + ErrorY                    -- Label Height
+            + 15                        -- Padding between Label and Buttons
+            + (HasButtons and 48 or 0)  -- Buttons Area
+
+        Loading.WindowErrorHeight = math.max(Loading.WindowHeight, RequiredHeight)
+    end
+
     function Loading:SetErrorMessage(Text)
         ErrorLabel.Text = Text
+        Loading:UpdateLayout()
     end
 
     function Loading:SetErrorButtons(Buttons)
@@ -9184,6 +9210,8 @@ function Library:CreateLoading(LoadingInfo)
                 end
             end)
         end
+
+        Loading:UpdateLayout()
     end
 
     --// Destroy/Continue \\--
