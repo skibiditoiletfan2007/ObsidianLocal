@@ -9041,7 +9041,7 @@ function Library:CreateLoading(LoadingInfo)
 
         local RequiredHeight = 
               49 -- TopBar
-            + 48 -- Padding (estimated based on layout and elements)
+            + 48 -- Padding
             + InnerContent.UIListLayout.AbsoluteContentSize.Y
 
         Loading.WindowHeight = math.max(Loading.BaseWindowHeight, RequiredHeight)
