@@ -1078,12 +1078,16 @@ function Library:GetCustomIcon(IconName: string): any
         return LucideIcon
     end
 
-    return {
-        Url = if tonumber(IconName) then string.format("rbxassetid://%s", tostring(IconName)) else IconName,
-        ImageRectOffset = Vector2.zero,
-        ImageRectSize = Vector2.zero,
-        Custom = true,
-    }
+    if tonumber(IconName) then
+        return {
+            Url = string.format("rbxassetid://%s", tostring(IconName)),
+            ImageRectOffset = Vector2.zero,
+            ImageRectSize = Vector2.zero,
+            Custom = true,
+        }
+    end
+    
+    return nil
 end
 
 function Library:Validate(Table: { [string]: any }, Template: { [string]: any }): { [string]: any }
