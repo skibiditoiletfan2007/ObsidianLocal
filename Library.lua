@@ -4687,7 +4687,18 @@ do
         local Container = Groupbox.Container
 
         if Info.SpecialType == "Player" then
-            Info.Values = GetPlayers(Info.ExcludeLocalPlayer)
+            local Values = {}
+
+            if Info.ExtraValues then
+                for Index, Key in pairs(Info.ExtraValues) do
+                    table.insert(Values, Key)
+                end
+            end
+            for Index, Key in pairs(GetPlayers(Info.ExcludeLocalPlayer)) do
+                table.insert(Values, Key)
+            end
+
+            Info.Values = Values
             Info.AllowNull = true
         elseif Info.SpecialType == "Team" then
             Info.Values = GetTeams()
@@ -4698,6 +4709,7 @@ do
             Text = typeof(Info.Text) == "string" and Info.Text or nil,
             Value = Info.Multi and {} or nil,
             Values = Info.Values,
+            ExtraValues = Info.ExtraValues,
             DisabledValues = Info.DisabledValues,
             Multi = Info.Multi,
 
@@ -9341,7 +9353,18 @@ local function OnPlayerChange()
     local PlayerList, ExcludedPlayerList = GetPlayers(), GetPlayers(true)
     for _, Dropdown in Options do
         if Dropdown.Type == "Dropdown" and Dropdown.SpecialType == "Player" then
-            Dropdown:SetValues(Dropdown.ExcludeLocalPlayer and ExcludedPlayerList or PlayerList)
+            local Values = {}
+
+            if Dropdown.ExtraValues then
+                for Index, Key in pairs(Dropdown.ExtraValues) do
+                    table.insert(Values, Key)
+                end
+            end
+            for Index, Key in pairs(GetPlayers(Dropdown.ExcludeLocalPlayer)) do
+                table.insert(Values, Key)
+            end
+
+        	Dropdown:SetValues(Values)
         end
     end
 end
