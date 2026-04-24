@@ -4712,6 +4712,7 @@ do
             ExtraValues = Info.ExtraValues,
             DisabledValues = Info.DisabledValues,
             Multi = Info.Multi,
+            MaxLength = Info.MaxLength,
 
             SpecialType = Info.SpecialType,
             ExcludeLocalPlayer = Info.ExcludeLocalPlayer,
@@ -4878,8 +4879,8 @@ do
                 end
             end
 
-            if #Str > 50 then
-                Str = Str:sub(1, 47) .. "..."
+            if #Str > (Dropdown.MaxLength or 25) then
+                Str = Str:sub(1, (Dropdown.MaxLength - 3 or 22)) .. "..."
             end
 
             Display.Text = (Str == "" and "---" or Str)
