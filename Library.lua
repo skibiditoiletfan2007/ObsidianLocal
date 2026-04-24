@@ -4878,8 +4878,8 @@ do
                 end
             end
 
-            if #Str > 25 then
-                Str = Str:sub(1, 22) .. "..."
+            if #Str > 50 then
+                Str = Str:sub(1, 47) .. "..."
             end
 
             Display.Text = (Str == "" and "---" or Str)
