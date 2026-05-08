@@ -233,9 +233,11 @@ local Library = {
     },
 
     Registry = {},
-    Scales = {},
+	Scales = {},
+	ScalesOffset = {},
 
     ImageManager = CustomImageManager,
+    ShowCursorBinding = string.sub(tostring({}), 10),
 }
 
 if RunService:IsStudio() then
@@ -413,6 +415,8 @@ local Templates = {
     Dropdown = {
         Values = {},
         DisabledValues = {},
+        ValueImages = {},
+
         Multi = false,
         MaxVisibleDropdownItems = 8,
 
@@ -1006,8 +1010,8 @@ function Library:SetDPIScale(DPIScale: number)
     Library.DPIScale = DPIScale / 100
     Library.MinSize = Library.OriginalMinSize * Library.DPIScale
 
-    for _, UIScale in Library.Scales do
-        UIScale.Scale = Library.DPIScale
+	for _, UIScale in Library.Scales do
+        UIScale.Scale = Library.DPIScale - (tonumber(Library.ScalesOffset[UIScale]) or 0)
     end
 
     for _, Option in Options do
@@ -4707,15 +4711,19 @@ do
 
         local Dropdown = {
             Text = typeof(Info.Text) == "string" and Info.Text or nil,
+
             Value = Info.Multi and {} or nil,
             Values = Info.Values,
             ExtraValues = Info.ExtraValues,
             DisabledValues = Info.DisabledValues,
+            ValueImages = Info.ValueImages,
+
             Multi = Info.Multi,
             MaxLength = Info.MaxLength,
 
             SpecialType = Info.SpecialType,
             ExcludeLocalPlayer = Info.ExcludeLocalPlayer,
+            EnablePlayerImages = Info.EnablePlayerImages,
 
             Tooltip = Info.Tooltip,
             DisabledTooltip = Info.DisabledTooltip,
@@ -4748,15 +4756,13 @@ do
             Parent = Holder,
         })
 
-        local Display = New("TextButton", {
-            Active = not Dropdown.Disabled,
+        local DisplayContainer = New("TextButton", {
             AnchorPoint = Vector2.new(0, 1),
             BackgroundColor3 = "MainColor",
             Position = UDim2.fromScale(0, 1),
             Size = UDim2.new(1, 0, 0, 21),
-            Text = "---",
-            TextSize = 14,
-            TextXAlignment = Enum.TextXAlignment.Left,
+            Text = "",
+            TextTransparency = 1,
             ZIndex = 2,
             Parent = Holder,
         })
@@ -4764,12 +4770,12 @@ do
         New("UIPadding", {
             PaddingLeft = UDim.new(0, 8),
             PaddingRight = UDim.new(0, 4),
-            Parent = Display,
+            Parent = DisplayContainer,
         })
 
         New("UIStroke", {
             Color = "OutlineColor",
-            Parent = Display,
+            Parent = DisplayContainer,
         })
 
         if Library.CornerRadiusDropdown == true then
@@ -4777,10 +4783,31 @@ do
                 Library.Corners,
                 New("UICorner", {
                     CornerRadius = UDim.new(0, Library.CornerRadius / 2),
-                    Parent = Display,
+                    Parent = DisplayContainer,
                 })
             )
         end
+
+        local DisplayImage = New("ImageLabel", {
+            BackgroundTransparency = 1,
+            Position = UDim2.fromOffset(-4, 3),
+            Size = UDim2.fromOffset(16, 16),
+            Image = "",
+            ImageTransparency = 1,
+            ZIndex = 2,
+            Parent = DisplayContainer,
+        })
+
+        local DisplayButton = New("TextButton", {
+            Active = not Dropdown.Disabled,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 21),
+            Text = "---",
+            TextSize = 14,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            ZIndex = 2,
+            Parent = DisplayContainer,
+        })
 
         -- Dropdowns cant currently use corner radius since the button is supposed to be connected with the menu
         -- This can be done properly without some random frames and overlaying textlabel over the button after Roblox adds UICorner with specific corner radiuses
@@ -4794,7 +4821,7 @@ do
             ImageTransparency = 0.5,
             Position = UDim2.fromScale(1, 0.5),
             Size = UDim2.fromOffset(16, 16),
-            Parent = Display,
+            Parent = DisplayContainer,
         })
 
         local SearchBox
@@ -4807,7 +4834,7 @@ do
                 TextSize = 14,
                 TextXAlignment = Enum.TextXAlignment.Left,
                 Visible = false,
-                Parent = Display,
+                Parent = DisplayButton,
             })
             New("UIPadding", {
                 PaddingLeft = UDim.new(0, 8),
@@ -4815,17 +4842,36 @@ do
             })
         end
 
+        local GetValueImage = function(Value)
+            if not Value then
+                return nil
+            end
+
+            local ValueImage = nil
+            if Dropdown.SpecialType == "Player" and Dropdown.EnablePlayerImages == true then
+                if typeof(Value) == "Instance" and Value:IsA("Player") then
+                    ValueImage = { Url = string.format("rbxthumb://type=AvatarHeadShot&id=%s&w=48&h=48", tostring(Value.UserId)) }
+                end
+            else
+                if Info.ValueImages and Info.ValueImages[Value] then
+                    ValueImage = Library:GetCustomIcon(Info.ValueImages[Value])
+                end
+            end
+
+            return ValueImage
+        end
+
         local MenuTable = Library:AddContextMenu(
-            Display,
+            DisplayContainer,
             function()
-                return UDim2.fromOffset(Display.AbsoluteSize.X / Library.DPIScale, 0)
+                return UDim2.fromOffset((DisplayContainer.AbsoluteSize.X / Library.DPIScale) + 1, 0)
             end,
             function()
-                return { 0.5, Display.AbsoluteSize.Y + 1.5 }
+                return { 0.5, DisplayContainer.AbsoluteSize.Y + 1.5 }
             end,
             2,
             function(Active: boolean)
-                Display.TextTransparency = (Active and SearchBox) and 1 or 0
+                DisplayButton.TextTransparency = (Active and SearchBox) and 1 or 0
                 ArrowImage.ImageTransparency = Active and 0 or 0.5
                 ArrowImage.Rotation = Active and 180 or 0
                 if SearchBox then
@@ -4841,7 +4887,7 @@ do
             local Y = math.clamp((Count or GetTableSize(Dropdown.Values)) * 21, 0, Info.MaxVisibleDropdownItems * 21)
 
             MenuTable:SetSize(function()
-                return UDim2.fromOffset(Display.AbsoluteSize.X / Library.DPIScale, Y)
+                return UDim2.fromOffset((DisplayContainer.AbsoluteSize.X / Library.DPIScale) + 1, Y)
             end)
         end
 
@@ -4851,7 +4897,8 @@ do
             end
 
             Label.TextTransparency = Dropdown.Disabled and 0.8 or 0
-            Display.TextTransparency = Dropdown.Disabled and 0.8 or 0
+            DisplayButton.TextTransparency = Dropdown.Disabled and 0.8 or 0
+            DisplayImage.ImageTransparency = Dropdown.Disabled and 0.8 or 0
             ArrowImage.ImageTransparency = Dropdown.Disabled and 0.8 or MenuTable.Active and 0 or 0.5
         end
 
@@ -4861,10 +4908,15 @@ do
             end
 
             local Str = ""
+            local ValueImage = nil
 
             if Info.Multi then
                 for _, Value in Dropdown.Values do
                     if Dropdown.Value[Value] then
+                        if not ValueImage then
+                            ValueImage = GetValueImage(Value)
+                        end
+
                         Str = Str
                             .. (Info.FormatDisplayValue and tostring(Info.FormatDisplayValue(Value)) or tostring(Value))
                             .. ", "
@@ -4873,7 +4925,9 @@ do
 
                 Str = Str:sub(1, #Str - 2)
             else
+                ValueImage = GetValueImage(Dropdown.Value)
                 Str = Dropdown.Value and tostring(Dropdown.Value) or ""
+
                 if Str ~= "" and Info.FormatDisplayValue then
                     Str = tostring(Info.FormatDisplayValue(Str))
                 end
@@ -4883,7 +4937,20 @@ do
                 Str = Str:sub(1, (Dropdown.MaxLength and Dropdown.MaxLength - 3 or 22)) .. "..."
             end
 
-            Display.Text = (Str == "" and "---" or Str)
+            DisplayButton.Text = (Str == "" and "---" or Str)
+            
+            if ValueImage then
+                DisplayImage.Image = ValueImage.Url
+                DisplayImage.ImageRectOffset = ValueImage.ImageRectOffset or Vector2.zero
+                DisplayImage.ImageRectSize = ValueImage.ImageRectSize or Vector2.zero
+                DisplayImage.ImageTransparency = 0
+            else
+                DisplayImage.Image = ""
+                DisplayImage.ImageTransparency = 1
+            end
+
+            DisplayButton.Size = ValueImage and UDim2.new(1, -8, 0, 21) or UDim2.new(1, 0, 0, 21)
+            DisplayButton.Position = ValueImage and UDim2.fromOffset(14, 0) or UDim2.fromOffset(0, 0)
         end
 
         function Dropdown:OnChanged(Func)
@@ -4910,7 +4977,7 @@ do
             local DisabledValues = Dropdown.DisabledValues
 
             for Button, _ in Buttons do
-                Button:Destroy()
+                Button.Parent:Destroy()
             end
             table.clear(Buttons)
 
@@ -4925,17 +4992,36 @@ do
 
                 local IsDisabled = table.find(DisabledValues, Value)
                 local Table = {}
+                local ValueImage = GetValueImage(Value)
 
-                local Button = New("TextButton", {
+                local Container = New("Frame", {
                     BackgroundColor3 = "MainColor",
                     BackgroundTransparency = 1,
                     LayoutOrder = IsDisabled and 1 or 0,
                     Size = UDim2.new(1, 0, 0, 21),
+                    Parent = MenuTable.Menu,
+                })
+
+                local Image = ValueImage and New("ImageLabel", {
+                    BackgroundTransparency = 1,
+                    Image = ValueImage.Url,
+                    ImageRectOffset = ValueImage.ImageRectOffset,
+                    ImageRectSize = ValueImage.ImageRectSize,
+                    ImageTransparency = 0.5,
+                    Size = UDim2.fromOffset(16, 16),
+                    Position = UDim2.fromOffset(4, 3),
+                    Parent = Container,
+                })
+
+                local Button = New("TextButton", {
+                    BackgroundTransparency = 1,
+                    Size = ValueImage and UDim2.new(1, -18, 0, 21) or UDim2.new(1, 0, 0, 21),
+                    Position = ValueImage and UDim2.fromOffset(18, 0) or UDim2.fromOffset(0, 0),
                     Text = FormattedValue,
                     TextSize = 14,
                     TextTransparency = 0.5,
                     TextXAlignment = Enum.TextXAlignment.Left,
-                    Parent = MenuTable.Menu,
+                    Parent = Container,
                 })
                 New("UIPadding", {
                     PaddingLeft = UDim.new(0, 7),
@@ -4957,8 +5043,12 @@ do
                         Selected = Dropdown.Value == Value
                     end
 
-                    Button.BackgroundTransparency = Selected and 0 or 1
+                    Container.BackgroundTransparency = Selected and 0 or 1
                     Button.TextTransparency = IsDisabled and 0.8 or Selected and 0 or 0.5
+
+                    if Image then
+                        Image.ImageTransparency = IsDisabled and 0.8 or Selected and 0 or 0.5
+                    end
                 end
 
                 if not IsDisabled then
@@ -4999,7 +5089,7 @@ do
         function Dropdown:SetValue(Value)
             if Info.Multi then
                 local Table = {}
-
+				
                 for Val, Active in Value or {} do
                     if typeof(Active) ~= "boolean" then
                         Table[Active] = true
@@ -5067,6 +5157,27 @@ do
             Dropdown:BuildDropdownList()
         end
 
+        function Dropdown:SetValueImages(ValueImages)
+            if typeof(ValueImages) ~= "table" then
+                return
+            end
+            
+            Dropdown.ValueImages = ValueImages
+            Dropdown:BuildDropdownList()
+        end
+
+        function Dropdown:AddValueImages(ValueImages)
+            if typeof(ValueImages) ~= "table" then
+                return
+            end
+            
+            for key, val in ValueImages do
+                Dropdown.ValueImages[key] = val
+            end
+            
+            Dropdown:BuildDropdownList()
+        end
+
         function Dropdown:SetDisabled(Disabled: boolean)
             Dropdown.Disabled = Disabled
 
@@ -5075,7 +5186,7 @@ do
             end
 
             MenuTable:Close()
-            Display.Active = not Dropdown.Disabled
+            DisplayButton.Active = not Dropdown.Disabled
             Dropdown:UpdateColors()
         end
 
@@ -5094,13 +5205,16 @@ do
             Label.Visible = not not Text
         end
 
-        Display.MouseButton1Click:Connect(function()
+        local ToggleDropdown = function()
             if Dropdown.Disabled then
                 return
             end
 
             MenuTable:Toggle()
-        end)
+        end
+
+        DisplayContainer.MouseButton1Click:Connect(ToggleDropdown)
+        DisplayButton.MouseButton1Click:Connect(ToggleDropdown)
 
         if SearchBox then
             SearchBox:GetPropertyChangedSignal("Text"):Connect(Dropdown.BuildDropdownList)
@@ -5139,7 +5253,7 @@ do
         end
 
         if typeof(Dropdown.Tooltip) == "string" or typeof(Dropdown.DisabledTooltip) == "string" then
-            Dropdown.TooltipTable = Library:AddTooltip(Dropdown.Tooltip, Dropdown.DisabledTooltip, Display)
+            Dropdown.TooltipTable = Library:AddTooltip(Dropdown.Tooltip, Dropdown.DisabledTooltip, DisplayContainer)
             Dropdown.TooltipTable.Disabled = Dropdown.Disabled
         end
 
@@ -8485,10 +8599,11 @@ function Library:CreateWindow(WindowInfo)
 
         if Library.Toggled and not Library.IsMobile then
             local OldMouseIconEnabled = UserInputService.MouseIconEnabled
+            local ShowCursorBinding = Library.ShowCursorBinding
             pcall(function()
-                RunService:UnbindFromRenderStep("ShowCursor")
+                RunService:UnbindFromRenderStep(ShowCursorBinding)
             end)
-            RunService:BindToRenderStep("ShowCursor", Enum.RenderPriority.Last.Value, function()
+            RunService:BindToRenderStep(ShowCursorBinding, Enum.RenderPriority.Last.Value, function()
                 UserInputService.MouseIconEnabled = not Library.ShowCustomCursor
 
                 Cursor.Position = UDim2.fromOffset(Mouse.X, Mouse.Y)
@@ -8497,7 +8612,7 @@ function Library:CreateWindow(WindowInfo)
                 if not (Library.Toggled and ScreenGui and ScreenGui.Parent) then
                     UserInputService.MouseIconEnabled = OldMouseIconEnabled
                     Cursor.Visible = false
-                    RunService:UnbindFromRenderStep("ShowCursor")
+                    RunService:UnbindFromRenderStep(ShowCursorBinding)
                 end
             end)
         elseif not Library.Toggled then
@@ -8727,8 +8842,12 @@ function Library:CreateLoading(LoadingInfo)
     Library:AddOutline(MainFrame)
     table.insert(Library.Corners, New("UICorner", { CornerRadius = UDim.new(0, Library.CornerRadius), Parent = MainFrame }))
     
-    local MainScale = New("UIScale", { Parent = MainFrame })
-    table.insert(Library.Scales, MainScale)
+	local MainScale = New("UIScale", {
+		Scale = Library.IsMobile and 0.8 or 1,
+		Parent = MainFrame
+	})
+	table.insert(Library.Scales, MainScale)
+	Library.ScalesOffset[MainScale] = Library.IsMobile and 0.2 or 0
 
     --// Layout Containers \\--
     local Container = New("Frame", {
