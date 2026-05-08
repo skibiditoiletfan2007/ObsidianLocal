@@ -4880,7 +4880,7 @@ do
             end
 
             if #Str > (Dropdown.MaxLength or 25) then
-                Str = Str:sub(1, (Dropdown.MaxLength - 3 or 22)) .. "..."
+                Str = Str:sub(1, (Dropdown.MaxLength and Dropdown.MaxLength - 3 or 22)) .. "..."
             end
 
             Display.Text = (Str == "" and "---" or Str)
